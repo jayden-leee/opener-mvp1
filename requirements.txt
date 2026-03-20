@@ -1,0 +1,10 @@
+streamlit
+python-dotenv
+openai
+anthropic
+langchain
+langchain-openai
+langchain-anthropic
+tavily-python
+supabase
+pandas
