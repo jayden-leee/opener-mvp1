@@ -2,17 +2,26 @@ import streamlit as st
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
-class EngInterviewer:
+# 1. 인터뷰어 클래스 (이름을 여러 버전으로 준비했습니다)
+class EnglishInterviewer:
     def __init__(self):
-        # 스트림릿 세이브해둔 키 가져오기
-        api_key = st.secrets["OPENAI_API_KEY"]
-        self.llm = ChatOpenAI(model="gpt-4o", api_key=api_key)
+        if "OPENAI_API_KEY" not in st.secrets:
+            st.error("OpenAI API Key가 설정되지 않았습니다.")
+            return
+        self.llm = ChatOpenAI(model="gpt-4o", api_key=st.secrets["OPENAI_API_KEY"])
         
     def ask_question(self, chat_history):
         system_msg = SystemMessage(content="당신은 전통주 수출 컨설턴트입니다. 친절하게 인터뷰를 진행하세요.")
         response = self.llm.invoke([system_msg] + chat_history)
         return response.content
 
-# 다른 파일에서 불러다 쓸 수 있게 내보내기
+# 혹시 다른 이름으로 부를까봐 별명을 지어둡니다.
+EngInterviewer = EnglishInterviewer
+
+# 2. 상태 관리용 함수 (보통 이게 필요합니다)
 def get_interviewer():
-    return EngInterviewer()
+    return EnglishInterviewer()
+
+# 3. 빈 클래스 (에러 방지용)
+class InterviewerState:
+    pass
