@@ -138,3 +138,36 @@ def search_buyers(product_info, target_market):
         
     except Exception as e:
         return [{"company_name": "오류 발생", "buyer_type": "-", "reason": f"바이어 검색 중 오류: {str(e)}", "contact_strategy": "-"}]
+
+# ==========================================
+# 5. 바이어 심층 분석 (Deep Dive) 엔진
+# ==========================================
+def deep_dive_buyer(buyer_info, product_info):
+    """
+    특정 바이어를 선택했을 때, 맞춤형 접근 전략과 콜드메일 초안 등을 심층 분석해 줍니다.
+    """
+    try:
+        import streamlit as st
+        from langchain_openai import ChatOpenAI
+        from langchain_core.messages import SystemMessage, HumanMessage
+        
+        if "OPENAI_API_KEY" not in st.secrets:
+            return "오류: API 키가 설정되지 않았습니다."
+            
+        llm = ChatOpenAI(model="gpt-4o", api_key=st.secrets["OPENAI_API_KEY"], temperature=0.7)
+        
+        system_msg = SystemMessage(content="""
+        당신은 전통주 수출 B2B 영업 전문가입니다. 
+        사용자의 제품 정보와 타겟 바이어 정보를 바탕으로 다음 내용을 마크다운 형식으로 상세히 작성해주세요:
+        1. 바이어 맞춤형 핵심 소구 포인트 (Why us?)
+        2. 예상되는 협상 쟁점 및 대응 논리
+        3. 첫 콜드메일(Cold Email) 작성 초안 (영문 및 국문 번역)
+        """)
+        
+        user_msg = HumanMessage(content=f"바이어 정보: {buyer_info}\n제품 정보: {product_info}")
+        
+        response = llm.invoke([system_msg, user_msg])
+        return response.content
+        
+    except Exception as e:
+        return f"심층 분석 중 오류가 발생했습니다: {str(e)}"
