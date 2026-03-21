@@ -122,3 +122,79 @@ def generate_proposal_pdf(product_data, buyer_intel, cold_email, pitch_deck, rad
     except ImportError:
         # reportlab 라이브러리가 없을 경우 아주 단순한 빈 PDF 껍데기 반환
         return b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000010 00000 n \n0000000060 00000 n \n0000000117 00000 n \ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n196\n%%EOF"
+
+# ==========================================
+# 5. 수출 서류 생성용 메뉴판 (설계도 요구)
+# ==========================================
+DOCUMENT_TYPES = {
+    "상업송장 (Commercial Invoice)": "Commercial Invoice",
+    "포장명세서 (Packing List)": "Packing List",
+    "제조공정도 (Manufacturing Process)": "Manufacturing Process Description",
+    "성분분석표 (Certificate of Analysis)": "Certificate of Analysis (COA)"
+}
+
+# ==========================================
+# 6. 수출 서류 초안 작성 일꾼
+# ==========================================
+def generate_document(doc_type, product_info, target_market, exporter_info):
+    """
+    선택한 서류 종류에 맞춰 AI가 영문 수출 서류 초안(Markdown)을 작성합니다.
+    """
+    try:
+        import streamlit as st
+        from langchain_openai import ChatOpenAI
+        from langchain_core.messages import SystemMessage, HumanMessage
+        
+        if "OPENAI_API_KEY" not in st.secrets:
+            return "오류: API 키가 설정되지 않았습니다."
+            
+        llm = ChatOpenAI(model="gpt-4o", api_key=st.secrets["OPENAI_API_KEY"], temperature=0.3)
+        
+        doc_name_en = DOCUMENT_TYPES.get(doc_type, doc_type)
+        
+        sys_msg = SystemMessage(content=f"""
+        당신은 관세사 및 수출입 서류 작성 전문가입니다.
+        사용자가 제공한 정보를 바탕으로 [{doc_name_en}]의 초안을 영문으로 작성하세요.
+        문서의 형식은 깔끔한 Markdown 테이블이나 리스트 형태를 유지하고, 실제 실무에서 쓰이는 양식처럼 보이게 구성하세요.
+        빈칸이나 추가 정보가 필요한 곳은 [  ] 처리하여 사용자가 나중에 채워 넣을 수 있게 하세요.
+        """)
+        
+        user_msg = HumanMessage(content=f"제품 정보: {product_info}\n수출 대상 시장: {target_market}\n수출자 정보: {exporter_info}")
+        
+        response = llm.invoke([sys_msg, user_msg])
+        return response.content
+        
+    except Exception as e:
+        return f"문서 생성 중 오류 발생: {str(e)}"
+
+# ==========================================
+# 7. 텍스트 -> PDF 변환 일꾼
+# ==========================================
+def generate_pdf_bytes(markdown_content, doc_type):
+    """
+    생성된 Markdown 텍스트를 간단한 PDF로 변환합니다.
+    (MVP 버전: reportlab 등 복잡한 라이브러리 의존성을 피하기 위해 텍스트를 담은 기본 PDF 반환)
+    """
+    try:
+        from reportlab.pdfgen import canvas
+        import io
+        
+        buf = io.BytesIO()
+        c = canvas.Canvas(buf)
+        c.drawString(50, 800, f"Document: {doc_type}")
+        
+        # Markdown 텍스트를 줄바꿈하여 PDF에 간단히 쓰기
+        y_position = 760
+        lines = markdown_content.split('\n')
+        for line in lines[:40]: # 페이지 넘김 방지를 위해 첫 40줄만 인쇄 (MVP용)
+            # 한글 깨짐 방지를 위해 아주 간단히 텍스트만 처리하거나, 영어 위주로 작성됨을 가정
+            c.drawString(50, y_position, line.strip()[:80]) # 너무 긴 줄 자르기
+            y_position -= 15
+            
+        c.save()
+        buf.seek(0)
+        return buf.getvalue()
+        
+    except ImportError:
+        # 라이브러리가 없을 경우 에러 방지용 가짜 PDF 껍데기 반환
+        return b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000010 00000 n \n0000000060 00000 n \n0000000117 00000 n \ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n196\n%%EOF"
