@@ -97,3 +97,44 @@ def check_regulations(product_info, market_code):
         })
 
     return checks
+    # ==========================================
+# 4. 바이어 발굴 AI 엔진 (새로 추가된 일꾼)
+# ==========================================
+def search_buyers(product_info, target_market):
+    """
+    AI를 사용하여 타겟 시장의 잠재 바이어(수입사, 유통사 등) 목록을 찾아옵니다.
+    """
+    try:
+        if "OPENAI_API_KEY" not in st.secrets:
+            return [{"error": "API 키가 설정되지 않았습니다."}]
+            
+        llm = ChatOpenAI(model="gpt-4o", api_key=st.secrets["OPENAI_API_KEY"], temperature=0.7)
+        
+        system_msg = SystemMessage(content="""
+        당신은 해외 주류 바이어 발굴 전문가입니다.
+        주어진 제품 정보와 타겟 시장에 맞는 잠재 바이어(수입사, 유통사, 대형 마트 등) 3곳을 추천해주세요.
+        반드시 아래의 JSON 배열(List) 형식으로만 답변하세요.
+        [
+            {
+                "company_name": "ABC Liquors",
+                "buyer_type": "주류 전문 수입사",
+                "reason": "해당 국가는... 때문에 이 바이어가 적합함",
+                "contact_strategy": "콜드메일 전송 및 샘플 발송"
+            }
+        ]
+        """)
+        
+        user_msg = HumanMessage(content=f"제품 정보: {product_info}\n타겟 시장: {target_market}")
+        
+        response = llm.invoke([system_msg, user_msg])
+        
+        content = response.content.strip()
+        if content.startswith("```json"):
+            content = content[7:-3] # 마크다운 제거
+        elif content.startswith("```"):
+            content = content[3:-3]
+            
+        return json.loads(content)
+        
+    except Exception as e:
+        return [{"company_name": "오류 발생", "buyer_type": "-", "reason": f"바이어 검색 중 오류: {str(e)}", "contact_strategy": "-"}]
