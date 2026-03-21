@@ -9,24 +9,27 @@ class InterviewerState(TypedDict):
     current_step: str
     product_info: dict
 
-# 2. 메인 대화 함수 (chat_with_consultant)
+# 2. 메인 대화 함수
 def chat_with_consultant(messages):
     try:
         llm = ChatOpenAI(model="gpt-4o", api_key=st.secrets["OPENAI_API_KEY"])
-        system_msg = SystemMessage(content="당신은 전통주 수출 컨설턴트입니다. 친절하게 상담을 진행하세요.")
+        system_msg = SystemMessage(content="당신은 전통주 수출 컨설턴트입니다.")
         response = llm.invoke([system_msg] + messages)
         return response.content
     except Exception as e:
         return f"AI 연결 에러: {str(e)}"
 
-# 3. ★이번 에러의 핵심: 인터뷰 완료 감지 함수★
+# 3. 이번 에러의 주인공: 완료 감지 및 마커 제거 함수
 def detect_completion(messages):
-    """
-    AI가 대화 내용을 보고 인터뷰를 마쳐도 될지 판단합니다.
-    지금은 MVP 단계이므로, 일단 False를 돌려주어 대화가 계속되게 합니다.
-    """
-    # 대화가 너무 길어지거나 특정 키워드가 나오면 True를 반환하도록 나중에 확장 가능합니다.
+    # 인터뷰 완료 여부를 판단 (임시로 False)
     return False
+
+def strip_completion_marker(text):
+    """
+    답변에서 불필요한 마커를 제거하는 청소부 함수입니다.
+    """
+    if not text: return ""
+    return text.replace("[DONE]", "").replace("<|endoftext|>", "").strip()
 
 # 4. 클래스 버전 인터페이스 (보험용)
 class EnglishInterviewer:
@@ -35,7 +38,7 @@ class EnglishInterviewer:
     def ask_question(self, chat_history):
         return chat_with_consultant(chat_history)
 
-# 별칭(Alias) 설정
+# 별칭(Alias) 설정 - 어떤 이름을 불러도 대답하게 함
 EngInterviewer = EnglishInterviewer
 Interviewer = EnglishInterviewer
 
