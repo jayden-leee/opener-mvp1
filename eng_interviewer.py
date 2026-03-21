@@ -1,6 +1,13 @@
 import streamlit as st
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+import os
+import uuid
+import database  # 수파베이스 일꾼을 직접 불러옵니다.
+
+# 시스템 환경변수에 스트림릿 시크릿 값을 강제로 주입합니다. (일꾼이 길을 잃지 않게!)
+if "SUPABASE_URL" in st.secrets:
+    os.environ["SUPABASE_URL"] = st.secrets["SUPABASE_URL"]
+if "SUPABASE_ANON_KEY" in st.secrets:
+    os.environ["SUPABASE_ANON_KEY"] = st.secrets["SUPABASE_ANON_KEY"]
 
 # ==========================================
 # 1. 설계도가 애타게 찾던 '상수(이름)'들
