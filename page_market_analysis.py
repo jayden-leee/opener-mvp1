@@ -21,12 +21,14 @@ def render():
         with col1:
             product_name = st.text_input("제품명", placeholder="예: 화요 41")
             product_type = st.selectbox("주종", ["막걸리", "청주/약주", "증류식 소주", "일반 소주", "과실주", "기타"])
-            alcohol = st.slider("알코올 도수 (%)", 1, 60, 13)
+            # 💡 수정된 부분: 숫자 입력창, 0.1도 단위
+            alcohol = st.number_input("알코올 도수 (%)", min_value=0.0, max_value=100.0, value=13.0, step=0.1, format="%.1f")
 
         with col2:
             target_market = st.selectbox("수출 목표 시장", list(EXPORT_MARKETS.keys()))
             volume = st.text_input("용량", placeholder="예: 375ml, 750ml")
-            price_krw = st.number_input("국내 출고가 (원)", min_value=0, step=1000, value=15000)
+            # 💡 수정된 부분: 10원 단위
+            price_krw = st.number_input("국내 출고가 (원)", min_value=0, step=10, value=15000)
 
         submit = st.form_submit_button("🔍 분석 시작", use_container_width=True)
 
